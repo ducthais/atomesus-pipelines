@@ -1,0 +1,3 @@
+# Sinh từ requirements.txt của app; không sửa riêng.
+dbt-core>=1.9,<1.11
+dbt-duckdb>=1.9,<2

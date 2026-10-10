@@ -1,0 +1,18 @@
+# Khung dbt dùng chung. Model của từng pipeline do templates/ sinh ra vào models/staging và models/gold.
+name: p045
+version: "1.0.0"
+config-version: 2
+profile: p045
+
+model-paths: [models]
+macro-paths: [macros]
+target-path: target
+clean-targets: [target, dbt_packages]
+
+models:
+  p045:
+    staging:
+      +schema: staging
+      +materialized: table
+    gold:
+      +schema: gold

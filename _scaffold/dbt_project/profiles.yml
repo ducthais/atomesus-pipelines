@@ -1,0 +1,13 @@
+# Sandbox: một file DuckDB riêng cho mỗi run (WAREHOUSE_PATH do bước chạy thử đặt).
+p045:
+  target: sandbox
+  outputs:
+    sandbox:
+      type: duckdb
+      path: "{{ env_var('WAREHOUSE_PATH') }}"
+      schema: main
+      threads: 1
+      # Ép timestamptz → timestamp theo UTC (giống Postgres), không theo múi giờ của máy chạy.
+      # PIPELINE_WAREHOUSE_TIMEZONE đổi được để tái hiện lỗi lệch giờ (đối chiếu độc lập sẽ chặn).
+      settings:
+        TimeZone: "{{ env_var('WAREHOUSE_TIMEZONE', 'UTC') }}"

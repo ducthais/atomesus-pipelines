@@ -1,0 +1,6 @@
+# Người duyệt/merge của repo pipeline. Đổi khi có thêm người phụ trách.
+* @ducthais
+/pipelines/ @ducthais
+/.github/ @ducthais
+/ci/ @ducthais
+/CODEOWNERS @ducthais
