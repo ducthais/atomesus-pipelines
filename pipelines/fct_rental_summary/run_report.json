@@ -1,0 +1,1305 @@
+{
+  "run_id": "0fac0536-b43d-4832-91d0-fd8600509136",
+  "version": 1,
+  "domain": "rental",
+  "created_by": "minh",
+  "trigger": "user_request",
+  "parent_run_id": "aab47b1a-26b3-459e-aafe-bc10e94218ec",
+  "source_scope": [
+    {
+      "source_ref": "pagila_pg",
+      "tables": [
+        "inventory",
+        "payment",
+        "rental"
+      ]
+    }
+  ],
+  "regression": null,
+  "created_at": "2026-10-12T04:16:11.679984Z",
+  "user_request": "Theo từng tháng và từng cửa hàng (cửa hàng sở hữu bản DVD được thuê): tổng doanh thu và số lượt thuê",
+  "status": "APPROVED",
+  "stage_reached": "review",
+  "plan": {
+    "domain": "rental",
+    "summary": "Pipeline này sẽ tính tổng doanh thu và số lượt thuê theo từng tháng và từng cửa hàng.",
+    "model_name": "fct_rental_summary",
+    "sources": [
+      {
+        "id": "payment",
+        "source_ref": "pagila_pg",
+        "object": "payment",
+        "purpose": "lấy thông tin về khoản thanh toán và doanh thu"
+      },
+      {
+        "id": "rental",
+        "source_ref": "pagila_pg",
+        "object": "rental",
+        "purpose": "lấy thông tin về lượt thuê"
+      },
+      {
+        "id": "inventory",
+        "source_ref": "pagila_pg",
+        "object": "inventory",
+        "purpose": "bảng dùng để ghép (joins)"
+      }
+    ],
+    "joins": [
+      {
+        "left": "payment.rental_id",
+        "right": "rental.rental_id",
+        "type": "inner"
+      },
+      {
+        "left": "rental.inventory_id",
+        "right": "inventory.inventory_id",
+        "type": "inner"
+      }
+    ],
+    "grain": [
+      "payment.payment_date theo tháng",
+      "inventory.store_id"
+    ],
+    "metrics": [
+      {
+        "name": "total_revenue",
+        "definition": "tổng số tiền từ các khoản thanh toán"
+      },
+      {
+        "name": "total_rentals",
+        "definition": "tổng số lượt thuê"
+      }
+    ],
+    "filters": [],
+    "schedule": "0 2 * * *",
+    "question": null,
+    "concepts": [
+      {
+        "term": "doanh thu",
+        "column": "payment.amount"
+      },
+      {
+        "term": "số lượt thuê",
+        "column": "rental.rental_id"
+      },
+      {
+        "term": "cửa hàng sở hữu bản DVD được thuê",
+        "column": "inventory.store_id"
+      },
+      {
+        "term": "theo tháng",
+        "column": "payment.payment_date"
+      }
+    ]
+  },
+  "spec": {
+    "spec_version": "1.2",
+    "domain": "rental",
+    "sources": [
+      {
+        "id": "payment",
+        "source_ref": "pagila_pg",
+        "primary_key": [
+          "payment_id"
+        ],
+        "cursor_field": "payment_date",
+        "write_disposition": "merge",
+        "target": {
+          "dataset": "bronze",
+          "table": "raw_payment"
+        },
+        "staging": {
+          "columns": [
+            {
+              "from": "payment_id",
+              "as": "payment_id",
+              "type": "integer",
+              "date_formats": null,
+              "currency": null
+            },
+            {
+              "from": "rental_id",
+              "as": "rental_id",
+              "type": "integer",
+              "date_formats": null,
+              "currency": null
+            },
+            {
+              "from": "amount",
+              "as": "amount",
+              "type": "decimal(18,2)",
+              "date_formats": null,
+              "currency": null
+            },
+            {
+              "from": "payment_date",
+              "as": "payment_date",
+              "type": "timestamp",
+              "date_formats": null,
+              "currency": null
+            }
+          ],
+          "dedupe": {
+            "keys": [
+              "payment_id"
+            ],
+            "keep": "latest",
+            "order_by": "payment_date"
+          },
+          "reject_if": [
+            "payment_id IS NULL",
+            "amount < 0"
+          ]
+        },
+        "kind": "postgres",
+        "table": "payment"
+      },
+      {
+        "id": "rental",
+        "source_ref": "pagila_pg",
+        "primary_key": [
+          "rental_id"
+        ],
+        "cursor_field": "rental_date",
+        "write_disposition": "merge",
+        "target": {
+          "dataset": "bronze",
+          "table": "raw_rental"
+        },
+        "staging": {
+          "columns": [
+            {
+              "from": "rental_id",
+              "as": "rental_id",
+              "type": "integer",
+              "date_formats": null,
+              "currency": null
+            },
+            {
+              "from": "inventory_id",
+              "as": "inventory_id",
+              "type": "integer",
+              "date_formats": null,
+              "currency": null
+            },
+            {
+              "from": "rental_date",
+              "as": "rental_date",
+              "type": "timestamp",
+              "date_formats": null,
+              "currency": null
+            }
+          ],
+          "dedupe": {
+            "keys": [
+              "rental_id"
+            ],
+            "keep": "latest",
+            "order_by": "rental_date"
+          },
+          "reject_if": [
+            "rental_id IS NULL"
+          ]
+        },
+        "kind": "postgres",
+        "table": "rental"
+      },
+      {
+        "id": "inventory",
+        "source_ref": "pagila_pg",
+        "primary_key": [
+          "inventory_id"
+        ],
+        "cursor_field": null,
+        "write_disposition": "replace",
+        "target": {
+          "dataset": "bronze",
+          "table": "raw_inventory"
+        },
+        "staging": {
+          "columns": [
+            {
+              "from": "inventory_id",
+              "as": "inventory_id",
+              "type": "integer",
+              "date_formats": null,
+              "currency": null
+            },
+            {
+              "from": "store_id",
+              "as": "store_id",
+              "type": "integer",
+              "date_formats": null,
+              "currency": null
+            }
+          ],
+          "dedupe": {
+            "keys": [
+              "inventory_id"
+            ],
+            "keep": "first",
+            "order_by": "inventory_id"
+          },
+          "reject_if": [
+            "inventory_id IS NULL"
+          ]
+        },
+        "kind": "postgres",
+        "table": "inventory"
+      }
+    ],
+    "transform": {
+      "model_name": "fct_rental_summary",
+      "from": "payment",
+      "joins": [
+        {
+          "source": "rental",
+          "type": "inner",
+          "on": [
+            [
+              "payment.rental_id",
+              "rental.rental_id"
+            ]
+          ]
+        },
+        {
+          "source": "inventory",
+          "type": "inner",
+          "on": [
+            [
+              "rental.inventory_id",
+              "inventory.inventory_id"
+            ]
+          ]
+        }
+      ],
+      "materialization": "incremental",
+      "unique_key": [
+        "payment_date",
+        "store_id"
+      ],
+      "grain": [
+        "payment.payment_date",
+        "inventory.store_id"
+      ],
+      "time_grain": {
+        "column": "payment.payment_date",
+        "unit": "month"
+      },
+      "metrics": [
+        {
+          "name": "total_revenue",
+          "expr": "SUM(payment.amount)"
+        },
+        {
+          "name": "total_rentals",
+          "expr": "COUNT(DISTINCT rental.rental_id)"
+        }
+      ],
+      "filters": [],
+      "partition_by": "payment_date",
+      "tests": [
+        {
+          "column": "payment_date",
+          "test": "not_null"
+        },
+        {
+          "column": "total_revenue",
+          "test": "not_negative"
+        },
+        {
+          "column": "total_rentals",
+          "test": "not_negative"
+        }
+      ]
+    },
+    "schedule": {
+      "cron": "0 2 * * *"
+    },
+    "estimates": {
+      "bytes_scanned": 0,
+      "usd": 0.0,
+      "latency_sec": 0.0
+    }
+  },
+  "spec_history": [
+    {
+      "attempt": 1,
+      "spec": {
+        "spec_version": "1.2",
+        "domain": "rental",
+        "sources": [
+          {
+            "id": "payment",
+            "kind": "postgres",
+            "source_ref": "pagila_pg",
+            "table": "payment",
+            "primary_key": [
+              "payment_id"
+            ],
+            "cursor_field": "payment_date",
+            "write_disposition": "merge",
+            "target": {
+              "dataset": "bronze",
+              "table": "raw_payment"
+            },
+            "staging": {
+              "columns": [
+                {
+                  "from": "payment_id",
+                  "as": "payment_id",
+                  "type": "integer"
+                },
+                {
+                  "from": "rental_id",
+                  "as": "rental_id",
+                  "type": "integer"
+                },
+                {
+                  "from": "amount",
+                  "as": "amount",
+                  "type": "decimal(18,2)",
+                  "currency": null
+                },
+                {
+                  "from": "payment_date",
+                  "as": "payment_date",
+                  "type": "timestamp"
+                }
+              ],
+              "dedupe": {
+                "keys": [
+                  "payment_id"
+                ],
+                "keep": "latest",
+                "order_by": "payment_date"
+              },
+              "reject_if": [
+                "payment_id IS NULL",
+                "amount < 0"
+              ]
+            }
+          },
+          {
+            "id": "rental",
+            "kind": "postgres",
+            "source_ref": "pagila_pg",
+            "table": "rental",
+            "primary_key": [
+              "rental_id"
+            ],
+            "cursor_field": "rental_date",
+            "write_disposition": "merge",
+            "target": {
+              "dataset": "bronze",
+              "table": "raw_rental"
+            },
+            "staging": {
+              "columns": [
+                {
+                  "from": "rental_id",
+                  "as": "rental_id",
+                  "type": "integer"
+                },
+                {
+                  "from": "inventory_id",
+                  "as": "inventory_id",
+                  "type": "integer"
+                },
+                {
+                  "from": "rental_date",
+                  "as": "rental_date",
+                  "type": "timestamp"
+                }
+              ],
+              "dedupe": {
+                "keys": [
+                  "rental_id"
+                ],
+                "keep": "latest",
+                "order_by": "rental_date"
+              },
+              "reject_if": [
+                "rental_id IS NULL"
+              ]
+            }
+          },
+          {
+            "id": "inventory",
+            "kind": "postgres",
+            "source_ref": "pagila_pg",
+            "table": "inventory",
+            "primary_key": [
+              "inventory_id"
+            ],
+            "cursor_field": null,
+            "write_disposition": "replace",
+            "target": {
+              "dataset": "bronze",
+              "table": "raw_inventory"
+            },
+            "staging": {
+              "columns": [
+                {
+                  "from": "inventory_id",
+                  "as": "inventory_id",
+                  "type": "integer"
+                },
+                {
+                  "from": "store_id",
+                  "as": "store_id",
+                  "type": "integer"
+                }
+              ],
+              "dedupe": {
+                "keys": [
+                  "inventory_id"
+                ],
+                "keep": "first",
+                "order_by": "inventory_id"
+              },
+              "reject_if": [
+                "inventory_id IS NULL"
+              ]
+            }
+          }
+        ],
+        "transform": {
+          "model_name": "fct_rental_summary",
+          "from": "payment",
+          "joins": [
+            {
+              "source": "rental",
+              "type": "inner",
+              "on": [
+                [
+                  "payment.rental_id",
+                  "rental.rental_id"
+                ]
+              ]
+            },
+            {
+              "source": "inventory",
+              "type": "inner",
+              "on": [
+                [
+                  "rental.inventory_id",
+                  "inventory.inventory_id"
+                ]
+              ]
+            }
+          ],
+          "materialization": "incremental",
+          "unique_key": [
+            "payment_date",
+            "store_id"
+          ],
+          "grain": [
+            "payment.payment_date",
+            "inventory.store_id"
+          ],
+          "metrics": [
+            {
+              "name": "total_revenue",
+              "expr": "SUM(payment.amount)"
+            },
+            {
+              "name": "total_rentals",
+              "expr": "COUNT(rental.rental_id)"
+            }
+          ],
+          "filters": [],
+          "time_grain": {
+            "column": "payment.payment_date",
+            "unit": "month"
+          },
+          "partition_by": "payment_date",
+          "tests": [
+            {
+              "column": "payment_date",
+              "test": "not_null"
+            },
+            {
+              "column": "total_revenue",
+              "test": "not_negative"
+            },
+            {
+              "column": "total_rentals",
+              "test": "not_negative"
+            }
+          ]
+        },
+        "schedule": {
+          "cron": "0 2 * * *"
+        },
+        "estimates": {
+          "bytes_scanned": 0,
+          "usd": 0.0,
+          "latency_sec": 0
+        }
+      },
+      "errors": [
+        "metrics 'total_rentals': COUNT(rental.rental_id) cộng trùng dòng của 'rental' vì mỗi dòng 'rental' khớp nhiều dòng 'payment' đã ghép trước đó. Đếm 'rental' thì dùng COUNT(DISTINCT rental.<khóa chính>); MIN/MAX không bị ảnh hưởng. Bảng phía nhiều chỉ được gộp trước tự động khi cột của nó chỉ nằm trong hàm gộp của metrics (không ở grain, không lẫn bộ lọc với bảng khác, không có bảng khác ghép qua nó); hoặc đặt transform.from là bảng phía một. Không được bỏ chỉ số người dùng yêu cầu"
+      ]
+    },
+    {
+      "attempt": 2,
+      "spec": {
+        "spec_version": "1.2",
+        "domain": "rental",
+        "sources": [
+          {
+            "id": "payment",
+            "kind": "postgres",
+            "source_ref": "pagila_pg",
+            "table": "payment",
+            "primary_key": [
+              "payment_id"
+            ],
+            "cursor_field": "payment_date",
+            "write_disposition": "merge",
+            "target": {
+              "dataset": "bronze",
+              "table": "raw_payment"
+            },
+            "staging": {
+              "columns": [
+                {
+                  "from": "payment_id",
+                  "as": "payment_id",
+                  "type": "integer"
+                },
+                {
+                  "from": "rental_id",
+                  "as": "rental_id",
+                  "type": "integer"
+                },
+                {
+                  "from": "amount",
+                  "as": "amount",
+                  "type": "decimal(18,2)",
+                  "currency": null
+                },
+                {
+                  "from": "payment_date",
+                  "as": "payment_date",
+                  "type": "timestamp"
+                }
+              ],
+              "dedupe": {
+                "keys": [
+                  "payment_id"
+                ],
+                "keep": "latest",
+                "order_by": "payment_date"
+              },
+              "reject_if": [
+                "payment_id IS NULL",
+                "amount < 0"
+              ]
+            }
+          },
+          {
+            "id": "rental",
+            "kind": "postgres",
+            "source_ref": "pagila_pg",
+            "table": "rental",
+            "primary_key": [
+              "rental_id"
+            ],
+            "cursor_field": "rental_date",
+            "write_disposition": "merge",
+            "target": {
+              "dataset": "bronze",
+              "table": "raw_rental"
+            },
+            "staging": {
+              "columns": [
+                {
+                  "from": "rental_id",
+                  "as": "rental_id",
+                  "type": "integer"
+                },
+                {
+                  "from": "inventory_id",
+                  "as": "inventory_id",
+                  "type": "integer"
+                },
+                {
+                  "from": "rental_date",
+                  "as": "rental_date",
+                  "type": "timestamp"
+                }
+              ],
+              "dedupe": {
+                "keys": [
+                  "rental_id"
+                ],
+                "keep": "latest",
+                "order_by": "rental_date"
+              },
+              "reject_if": [
+                "rental_id IS NULL"
+              ]
+            }
+          },
+          {
+            "id": "inventory",
+            "kind": "postgres",
+            "source_ref": "pagila_pg",
+            "table": "inventory",
+            "primary_key": [
+              "inventory_id"
+            ],
+            "cursor_field": null,
+            "write_disposition": "replace",
+            "target": {
+              "dataset": "bronze",
+              "table": "raw_inventory"
+            },
+            "staging": {
+              "columns": [
+                {
+                  "from": "inventory_id",
+                  "as": "inventory_id",
+                  "type": "integer"
+                },
+                {
+                  "from": "store_id",
+                  "as": "store_id",
+                  "type": "integer"
+                }
+              ],
+              "dedupe": {
+                "keys": [
+                  "inventory_id"
+                ],
+                "keep": "first",
+                "order_by": "inventory_id"
+              },
+              "reject_if": [
+                "inventory_id IS NULL"
+              ]
+            }
+          }
+        ],
+        "transform": {
+          "model_name": "fct_rental_summary",
+          "from": "payment",
+          "joins": [
+            {
+              "source": "rental",
+              "type": "inner",
+              "on": [
+                [
+                  "payment.rental_id",
+                  "rental.rental_id"
+                ]
+              ]
+            },
+            {
+              "source": "inventory",
+              "type": "inner",
+              "on": [
+                [
+                  "rental.inventory_id",
+                  "inventory.inventory_id"
+                ]
+              ]
+            }
+          ],
+          "materialization": "incremental",
+          "unique_key": [
+            "payment_date",
+            "store_id"
+          ],
+          "grain": [
+            "payment.payment_date",
+            "inventory.store_id"
+          ],
+          "metrics": [
+            {
+              "name": "total_revenue",
+              "expr": "SUM(payment.amount)"
+            },
+            {
+              "name": "total_rentals",
+              "expr": "COUNT(DISTINCT rental.rental_id)"
+            }
+          ],
+          "filters": [],
+          "time_grain": {
+            "column": "payment.payment_date",
+            "unit": "month"
+          },
+          "partition_by": "payment_date",
+          "tests": [
+            {
+              "column": "payment_date",
+              "test": "not_null"
+            },
+            {
+              "column": "total_revenue",
+              "test": "not_negative"
+            },
+            {
+              "column": "total_rentals",
+              "test": "not_negative"
+            }
+          ]
+        },
+        "schedule": {
+          "cron": "0 2 * * *"
+        },
+        "estimates": {
+          "bytes_scanned": 0,
+          "usd": 0.0,
+          "latency_sec": 0
+        }
+      },
+      "errors": []
+    },
+    {
+      "version": 1,
+      "reason": "Minh giữ nguyên Spec của agent, xác nhận đúng nhu cầu và cho chạy thử"
+    }
+  ],
+  "files": {
+    "dbt_project/models/gold/fct_rental_summary.sql": "sha256:182efcbf4a8e5b93a7391be1c28062833f2403d1b1b78b7fc3c729960842c1d5",
+    "dbt_project/models/gold/fct_rental_summary.yml": "sha256:ac641ca7032a8ee6d984f139fff17c2bb686d12f1b63e77406e0e47e377748a4",
+    "dbt_project/models/staging/stg_fct_rental_summary__inventory.sql": "sha256:f5d3cbc1bccba66c813effaf296b26ab99a2512b1a406ac8218d01f4c2743313",
+    "dbt_project/models/staging/stg_fct_rental_summary__payment.sql": "sha256:32328239b133123ae55f1ef88792bcf401a2fc5a3cae6a60f1d3f4308761b637",
+    "dbt_project/models/staging/stg_fct_rental_summary__rental.sql": "sha256:1fe6e254c521b994648f1bb23fc8b1fc49e39313476d0b64229a0ea0f729e48f",
+    "infra/dagster/generated/fct_rental_summary_asset.py": "sha256:dca2fd21754cb1c4470c53a098d9ec2859a7d2bcbfdcf27437ba5d748a1139b9",
+    "ingestion/fct_rental_summary_pipeline.py": "sha256:262af5568c3564c544fb8215afbac02f4aa4d696bbdf032ceed7eee4f40ffdfd"
+  },
+  "files_hash": "sha256:94a6ec04d74b063f42f36294de470133df4d1c466d5e68a36c2f90e6daecb6bc",
+  "gates": [
+    {
+      "name": "semantic",
+      "result": "pass",
+      "detail": "Không thực thể nào mơ hồ",
+      "observed": {
+        "resolved": {}
+      }
+    },
+    {
+      "name": "spec_schema",
+      "result": "pass",
+      "detail": "Spec hợp lệ",
+      "observed": {}
+    },
+    {
+      "name": "schema_real",
+      "result": "pass",
+      "detail": "Mọi cột Spec dùng có ở nguồn",
+      "observed": {
+        "sources": 3,
+        "columns": {
+          "payment": {
+            "amount": "numeric",
+            "payment_date": "timestamp with time zone",
+            "payment_id": "integer",
+            "rental_id": "integer"
+          },
+          "rental": {
+            "inventory_id": "integer",
+            "rental_date": "timestamp with time zone",
+            "rental_id": "integer"
+          },
+          "inventory": {
+            "inventory_id": "integer",
+            "store_id": "smallint"
+          }
+        }
+      }
+    },
+    {
+      "name": "currency",
+      "result": "pass",
+      "detail": "Cột tiền có mã tiền tệ ở nguồn đều được quy đổi về tiền gốc của domain",
+      "observed": {}
+    },
+    {
+      "name": "join_fanout",
+      "result": "pass",
+      "detail": "Không chỉ số nào cộng trùng dòng do ghép bảng",
+      "observed": {
+        "multiplied": {
+          "rental": "mỗi dòng 'rental' khớp nhiều dòng 'payment' đã ghép trước đó",
+          "inventory": "mỗi dòng 'inventory' khớp nhiều dòng 'rental' đã ghép trước đó"
+        },
+        "preaggregated": []
+      }
+    },
+    {
+      "name": "filter_values",
+      "result": "pass",
+      "detail": "Bộ lọc chỉ dùng giá trị có trong dòng mẫu",
+      "observed": {}
+    },
+    {
+      "name": "time_grain",
+      "result": "pass",
+      "detail": "Kết quả gộp theo tháng đúng như yêu cầu",
+      "observed": {
+        "requested": "month",
+        "time_grain": "month"
+      }
+    },
+    {
+      "name": "ast_guard",
+      "result": "pass",
+      "detail": "Biểu thức chỉ dùng cột và hàm được phép",
+      "observed": {}
+    },
+    {
+      "name": "budget",
+      "result": "pass",
+      "detail": "Ước tính 9,338,880 byte ≈ 0.000047 USD (payment 2,007,040 byte, rental 2,457,600 byte, inventory 204,800 byte, cộng model); hôm nay đã dùng 0.009504/2.0 USD",
+      "observed": {
+        "sources": {
+          "payment": 2007040,
+          "rental": 2457600,
+          "inventory": 204800
+        },
+        "model_bytes": 4669440,
+        "bytes": 9338880,
+        "usd": 0.0000466944,
+        "estimated": true,
+        "spent_today_usd": 0.00950371384,
+        "max_bytes_scanned": 5000000000,
+        "max_usd": 0.05,
+        "max_usd_per_day": 2.0
+      }
+    },
+    {
+      "name": "arbitrate",
+      "result": "pass",
+      "detail": "giữ lịch của Spec '0 2 * * *': dữ liệu cũ nhất 1440 phút ≤ 1440 phút",
+      "observed": {
+        "freshness_minutes": 1440,
+        "soft_cost_usd_per_day": 0.5,
+        "proposals": [
+          {
+            "cron": "0 2 * * *",
+            "from_spec": true,
+            "max_gap_minutes": 1440,
+            "runs_per_day": 1.0,
+            "usd_per_day": 0.0000466944,
+            "feasible": true
+          },
+          {
+            "cron": "*/15 * * * *",
+            "from_spec": false,
+            "max_gap_minutes": 15,
+            "runs_per_day": 96.0,
+            "usd_per_day": 0.0044826624,
+            "feasible": true
+          },
+          {
+            "cron": "*/30 * * * *",
+            "from_spec": false,
+            "max_gap_minutes": 30,
+            "runs_per_day": 48.0,
+            "usd_per_day": 0.0022413312,
+            "feasible": true
+          },
+          {
+            "cron": "0 * * * *",
+            "from_spec": false,
+            "max_gap_minutes": 60,
+            "runs_per_day": 24.0,
+            "usd_per_day": 0.0011206656,
+            "feasible": true
+          },
+          {
+            "cron": "0 */6 * * *",
+            "from_spec": false,
+            "max_gap_minutes": 360,
+            "runs_per_day": 4.0,
+            "usd_per_day": 0.0001867776,
+            "feasible": true
+          }
+        ],
+        "chosen": "0 2 * * *"
+      }
+    },
+    {
+      "name": "post_run",
+      "result": "pass",
+      "detail": "13/13 phép kiểm tra đạt",
+      "observed": {
+        "gold_rows": 12,
+        "gold_samples": [
+          {
+            "payment_date": "2017-01-01",
+            "store_id": "1",
+            "total_revenue": "2460.24",
+            "total_rentals": "576"
+          },
+          {
+            "payment_date": "2017-01-01",
+            "store_id": "2",
+            "total_revenue": "2364.19",
+            "total_rentals": "581"
+          },
+          {
+            "payment_date": "2017-02-01",
+            "store_id": "2",
+            "total_revenue": "5107.62",
+            "total_rentals": "1238"
+          },
+          {
+            "payment_date": "2017-02-01",
+            "store_id": "1",
+            "total_revenue": "4908.35",
+            "total_rentals": "1165"
+          },
+          {
+            "payment_date": "2017-03-01",
+            "store_id": "1",
+            "total_revenue": "11654.66",
+            "total_rentals": "2734"
+          },
+          {
+            "payment_date": "2017-03-01",
+            "store_id": "2",
+            "total_revenue": "11847.81",
+            "total_rentals": "2819"
+          },
+          {
+            "payment_date": "2017-04-01",
+            "store_id": "2",
+            "total_revenue": "14136.07",
+            "total_rentals": "3393"
+          },
+          {
+            "payment_date": "2017-04-01",
+            "store_id": "1",
+            "total_revenue": "14423.39",
+            "total_rentals": "3359"
+          },
+          {
+            "payment_date": "2017-05-01",
+            "store_id": "1",
+            "total_revenue": "6005.51",
+            "total_rentals": "667"
+          },
+          {
+            "payment_date": "2017-05-01",
+            "store_id": "2",
+            "total_revenue": "6067.01",
+            "total_rentals": "671"
+          },
+          {
+            "payment_date": "2017-06-01",
+            "store_id": "2",
+            "total_revenue": "75279.14",
+            "total_rentals": "7540"
+          },
+          {
+            "payment_date": "2017-06-01",
+            "store_id": "1",
+            "total_revenue": "73514.88",
+            "total_rentals": "7348"
+          }
+        ],
+        "gold_profile": [
+          {
+            "name": "payment_date",
+            "type": "DATE",
+            "non_null": 12
+          },
+          {
+            "name": "store_id",
+            "type": "INTEGER",
+            "non_null": 12,
+            "sum": "18",
+            "min": "1",
+            "max": "2"
+          },
+          {
+            "name": "total_revenue",
+            "type": "DECIMAL(38,2)",
+            "non_null": 12,
+            "sum": "227768.87",
+            "min": "2364.19",
+            "max": "75279.14"
+          },
+          {
+            "name": "total_rentals",
+            "type": "BIGINT",
+            "non_null": 12,
+            "sum": "32091",
+            "min": "576",
+            "max": "7540"
+          }
+        ],
+        "warehouse_timezone": "UTC",
+        "reconcile_skipped": "Chưa đối chiếu độc lập được: Postgres báo lỗi khi tính lại: canceling statement due to statement timeout."
+      }
+    }
+  ],
+  "checks": [
+    {
+      "name": "row_reconcile",
+      "source_id": "payment",
+      "result": "pass",
+      "observed": {
+        "source": 32093,
+        "bronze": 32093
+      }
+    },
+    {
+      "name": "row_reconcile",
+      "source_id": "rental",
+      "result": "pass",
+      "observed": {
+        "source": 32088,
+        "bronze": 32088
+      }
+    },
+    {
+      "name": "row_reconcile",
+      "source_id": "inventory",
+      "result": "pass",
+      "observed": {
+        "source": 4581,
+        "bronze": 4581
+      }
+    },
+    {
+      "name": "hash_reconcile",
+      "source_id": "payment",
+      "result": "pass",
+      "observed": {
+        "key_columns": [
+          "payment_id"
+        ],
+        "source_keys": 32093,
+        "bronze_keys": 32093,
+        "source_hash": "0829cd36fb806465",
+        "bronze_hash": "0829cd36fb806465",
+        "missing_in_bronze": [],
+        "extra_in_bronze": []
+      }
+    },
+    {
+      "name": "hash_reconcile",
+      "source_id": "rental",
+      "result": "pass",
+      "observed": {
+        "key_columns": [
+          "rental_id"
+        ],
+        "source_keys": 32088,
+        "bronze_keys": 32088,
+        "source_hash": "13cb0f6fde043f56",
+        "bronze_hash": "13cb0f6fde043f56",
+        "missing_in_bronze": [],
+        "extra_in_bronze": []
+      }
+    },
+    {
+      "name": "hash_reconcile",
+      "source_id": "inventory",
+      "result": "pass",
+      "observed": {
+        "key_columns": [
+          "inventory_id"
+        ],
+        "source_keys": 4581,
+        "bronze_keys": 4581,
+        "source_hash": "54e64f71a74125c6",
+        "bronze_hash": "54e64f71a74125c6",
+        "missing_in_bronze": [],
+        "extra_in_bronze": []
+      }
+    },
+    {
+      "name": "idempotent",
+      "source_id": "payment",
+      "result": "pass",
+      "observed": {
+        "first_rows": 32093,
+        "second_rows": 32093,
+        "first_hash": "0829cd36fb806465",
+        "second_hash": "0829cd36fb806465",
+        "write_disposition": "merge"
+      }
+    },
+    {
+      "name": "idempotent",
+      "source_id": "rental",
+      "result": "pass",
+      "observed": {
+        "first_rows": 32088,
+        "second_rows": 32088,
+        "first_hash": "13cb0f6fde043f56",
+        "second_hash": "13cb0f6fde043f56",
+        "write_disposition": "merge"
+      }
+    },
+    {
+      "name": "idempotent",
+      "source_id": "inventory",
+      "result": "pass",
+      "observed": {
+        "first_rows": 4581,
+        "second_rows": 4581,
+        "first_hash": "54e64f71a74125c6",
+        "second_hash": "54e64f71a74125c6",
+        "write_disposition": "replace"
+      }
+    },
+    {
+      "name": "staging_reconcile",
+      "source_id": "payment",
+      "result": "pass",
+      "observed": {
+        "bronze": 32093,
+        "staging": 32093,
+        "duplicates": 0,
+        "rejected": 0,
+        "reject_pct": 0.0,
+        "max_reject_pct": 1.0,
+        "reject_reasons": {},
+        "reject_samples": []
+      }
+    },
+    {
+      "name": "staging_reconcile",
+      "source_id": "rental",
+      "result": "pass",
+      "observed": {
+        "bronze": 32088,
+        "staging": 32088,
+        "duplicates": 0,
+        "rejected": 0,
+        "reject_pct": 0.0,
+        "max_reject_pct": 1.0,
+        "reject_reasons": {},
+        "reject_samples": []
+      }
+    },
+    {
+      "name": "staging_reconcile",
+      "source_id": "inventory",
+      "result": "pass",
+      "observed": {
+        "bronze": 4581,
+        "staging": 4581,
+        "duplicates": 0,
+        "rejected": 0,
+        "reject_pct": 0.0,
+        "max_reject_pct": 1.0,
+        "reject_reasons": {},
+        "reject_samples": []
+      }
+    },
+    {
+      "name": "dbt_test",
+      "source_id": null,
+      "result": "pass",
+      "observed": {
+        "passed": 9,
+        "failed": 0,
+        "failures": []
+      }
+    }
+  ],
+  "cost": {
+    "estimated_bytes": 9338880,
+    "actual_bytes": 9338880,
+    "usd": 0.0000466944,
+    "llm_usd": 0.0029355
+  },
+  "timing": {
+    "baseline_sec": 26.329,
+    "optimized_sec": null
+  },
+  "optimizer": [],
+  "attempts": {
+    "spec": 1,
+    "sql": 0
+  },
+  "llm_calls": 3,
+  "llm_usage": [
+    {
+      "stage": "plan",
+      "tier": "cheap",
+      "model": "gpt-4o-mini",
+      "input_tokens": 1786,
+      "output_tokens": 357,
+      "usd": 0.00048209999999999995
+    },
+    {
+      "stage": "propose",
+      "tier": "strong",
+      "model": "gpt-4o-mini",
+      "input_tokens": 3647,
+      "output_tokens": 1007,
+      "usd": 0.00115125
+    },
+    {
+      "stage": "propose",
+      "tier": "strong",
+      "model": "gpt-4o-mini",
+      "input_tokens": 4705,
+      "output_tokens": 994,
+      "usd": 0.0013021500000000002
+    }
+  ],
+  "error_trace": [],
+  "approval": {
+    "decision": "approved",
+    "reviewer": "an",
+    "files_hash": "sha256:94a6ec04d74b063f42f36294de470133df4d1c466d5e68a36c2f90e6daecb6bc",
+    "version": 1,
+    "at": "2026-10-12T04:41:24.955772Z",
+    "comment": ""
+  },
+  "review_history": [
+    {
+      "decision": "approved",
+      "reviewer": "an",
+      "files_hash": "sha256:94a6ec04d74b063f42f36294de470133df4d1c466d5e68a36c2f90e6daecb6bc",
+      "version": 1,
+      "at": "2026-10-12T04:41:24.955772Z",
+      "comment": ""
+    }
+  ],
+  "timeline": [
+    {
+      "event": "submitted",
+      "at": "2026-10-12T04:16:11.679972Z",
+      "actor": "minh"
+    },
+    {
+      "event": "plan_ready",
+      "at": "2026-10-12T04:16:16.557641Z",
+      "actor": null
+    },
+    {
+      "event": "plan_confirmed",
+      "at": "2026-10-12T04:16:47.950615Z",
+      "actor": "minh"
+    },
+    {
+      "event": "spec_ready",
+      "at": "2026-10-12T04:17:05.579180Z",
+      "actor": null
+    },
+    {
+      "event": "mapping_submitted",
+      "at": "2026-10-12T04:17:20.793458Z",
+      "actor": "Minh"
+    },
+    {
+      "event": "finished",
+      "at": "2026-10-12T04:17:47.329947Z",
+      "actor": null
+    }
+  ]
+}

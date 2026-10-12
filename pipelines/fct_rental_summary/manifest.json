@@ -1,0 +1,18 @@
+{
+  "manifest_version": 1,
+  "run_id": "0fac0536-b43d-4832-91d0-fd8600509136",
+  "version": 1,
+  "model_name": "fct_rental_summary",
+  "files_hash": "sha256:94a6ec04d74b063f42f36294de470133df4d1c466d5e68a36c2f90e6daecb6bc",
+  "files": {
+    "dbt_project/models/gold/fct_rental_summary.sql": "sha256:182efcbf4a8e5b93a7391be1c28062833f2403d1b1b78b7fc3c729960842c1d5",
+    "dbt_project/models/gold/fct_rental_summary.yml": "sha256:ac641ca7032a8ee6d984f139fff17c2bb686d12f1b63e77406e0e47e377748a4",
+    "dbt_project/models/staging/stg_fct_rental_summary__inventory.sql": "sha256:f5d3cbc1bccba66c813effaf296b26ab99a2512b1a406ac8218d01f4c2743313",
+    "dbt_project/models/staging/stg_fct_rental_summary__payment.sql": "sha256:32328239b133123ae55f1ef88792bcf401a2fc5a3cae6a60f1d3f4308761b637",
+    "dbt_project/models/staging/stg_fct_rental_summary__rental.sql": "sha256:1fe6e254c521b994648f1bb23fc8b1fc49e39313476d0b64229a0ea0f729e48f",
+    "infra/dagster/generated/fct_rental_summary_asset.py": "sha256:dca2fd21754cb1c4470c53a098d9ec2859a7d2bcbfdcf27437ba5d748a1139b9",
+    "ingestion/fct_rental_summary_pipeline.py": "sha256:262af5568c3564c544fb8215afbac02f4aa4d696bbdf032ceed7eee4f40ffdfd"
+  },
+  "reviewer": "an",
+  "approved_at": "2026-10-12T04:41:24.955772+00:00"
+}

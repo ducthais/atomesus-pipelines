@@ -1,0 +1,33 @@
+# Schema và test cho pipeline fct_rental_summary. Sinh tự động từ Spec, không sửa tay.
+version: 2
+
+sources:
+  - name: bronze
+    schema: bronze
+    tables:
+      - name: raw_payment
+      - name: raw_rental
+      - name: raw_inventory
+
+models:
+  - name: stg_fct_rental_summary__payment
+    columns:
+      - name: payment_id
+        data_tests: ['unique', 'not_null']
+  - name: stg_fct_rental_summary__rental
+    columns:
+      - name: rental_id
+        data_tests: ['unique', 'not_null']
+  - name: stg_fct_rental_summary__inventory
+    columns:
+      - name: inventory_id
+        data_tests: ['unique', 'not_null']
+  - name: fct_rental_summary
+    columns:
+      - name: payment_date
+        data_tests: ['not_null']
+      - name: store_id
+      - name: total_revenue
+        data_tests: ['not_negative']
+      - name: total_rentals
+        data_tests: ['not_negative']
