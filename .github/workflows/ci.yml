@@ -45,3 +45,20 @@ jobs:
           while IFS= read -r model; do
             python ci/parse_project.py "$model" --repo candidate --head "$PR_HEAD_SHA" --timeout 120 || exit 1
           done < "$RUNNER_TEMP/pipelines.txt"
+ # CI xanh thì tự squash merge PR Deploy mở từ app, đúng commit đã qua CI.
+  auto-merge:
+    name: auto-merge
+    needs: pipeline-ci
+    if: github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'pipeline/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Squash merge khi CI xanh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: gh pr merge "$PR_NUMBER" --squash --match-head-commit "$PR_HEAD_SHA" --repo "$GITHUB_REPOSITORY"
