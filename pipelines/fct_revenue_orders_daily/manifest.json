@@ -1,0 +1,17 @@
+{
+  "manifest_version": 1,
+  "run_id": "9e53e426-82f8-4e88-9dee-8ce2f532ac8c",
+  "version": 1,
+  "model_name": "fct_revenue_orders_daily",
+  "files_hash": "sha256:eca19767977929408120faf89644b556fbeecebba34783b100213457b100ad44",
+  "files": {
+    "dbt_project/models/gold/fct_revenue_orders_daily.sql": "sha256:b503ab85ef4739656e16b2db582cd16fef862f0fd5a3d20b0b56b628e402a27d",
+    "dbt_project/models/gold/fct_revenue_orders_daily.yml": "sha256:8a882107053dd689449c444cba1250980a31e28a91af25f0e7a3c5638f22a5b1",
+    "dbt_project/models/staging/stg_fct_revenue_orders_daily__payment.sql": "sha256:10553037463b3ef02078576315cb29c82dd8dfb6b58f1f78f03e3cd17f895395",
+    "dbt_project/models/staging/stg_fct_revenue_orders_daily__rental.sql": "sha256:7047fa38e851e48f190f183218b399284857249321faeef11bad6d5761e1d634",
+    "infra/dagster/generated/fct_revenue_orders_daily_asset.py": "sha256:1dc849e592c0031c8fa1c07987a51ac843340395700a52a9fef439d71eaa72c1",
+    "ingestion/fct_revenue_orders_daily_pipeline.py": "sha256:d94e5ff34f290f483878265448724f1ee12e0abdd1b0ea00ece76b0f8ad7efba"
+  },
+  "reviewer": "an",
+  "approved_at": "2026-10-17T16:08:18.255562+00:00"
+}
