@@ -1,0 +1,17 @@
+{
+  "manifest_version": 1,
+  "run_id": "c2e31337-2dd3-46a6-9075-a36d90183acf",
+  "version": 1,
+  "model_name": "fct_customer_revenue",
+  "files_hash": "sha256:e5dc12b18cee4ded8a8b686616278cd97f69961cf24b72cc01da46749277b34b",
+  "files": {
+    "dbt_project/models/gold/fct_customer_revenue.sql": "sha256:179a6cb6d9ec492795dfede2f06c95a028a765da0ea3096dbfd72be9320075ed",
+    "dbt_project/models/gold/fct_customer_revenue.yml": "sha256:3ace6f2591dfdd48b5d65dcc5d9b3bdc91255a442d129e4e5281b614b8c4b240",
+    "dbt_project/models/staging/stg_fct_customer_revenue__customer.sql": "sha256:8144edc6917900e36802f275c4697ae6d9e7ec0dd674da8d44fff169b06950c7",
+    "dbt_project/models/staging/stg_fct_customer_revenue__payment.sql": "sha256:5c8f5985f5df5123498285743ea6e2425b69d9c492ac1deedea65402b20c9531",
+    "infra/dagster/generated/fct_customer_revenue_asset.py": "sha256:89b42978b215f6abde0eb6347e8c3ae59a01bb936a86124c3305f798bcec0924",
+    "ingestion/fct_customer_revenue_pipeline.py": "sha256:76a09ad750192081c8031000db957b7b236fd733934538c67f287630adcf417d"
+  },
+  "reviewer": "an",
+  "approved_at": "2026-10-18T16:20:59.038489+00:00"
+}

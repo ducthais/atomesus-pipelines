@@ -1,0 +1,26 @@
+# Schema và test cho pipeline fct_customer_revenue. Sinh tự động từ Spec, không sửa tay.
+version: 2
+
+sources:
+  - name: bronze
+    schema: bronze
+    tables:
+      - name: raw_customer
+      - name: raw_payment
+
+models:
+  - name: stg_fct_customer_revenue__customer
+    columns:
+      - name: customer_id
+        data_tests: ['unique', 'not_null']
+  - name: stg_fct_customer_revenue__payment
+    columns:
+      - name: payment_id
+        data_tests: ['unique', 'not_null']
+  - name: fct_customer_revenue
+    columns:
+      - name: customer_id
+        data_tests: ['not_null']
+      - name: total_revenue
+        data_tests: ['not_negative']
+      - name: order_count

@@ -1,0 +1,939 @@
+{
+  "run_id": "c2e31337-2dd3-46a6-9075-a36d90183acf",
+  "version": 1,
+  "domain": "rental",
+  "created_by": "minh",
+  "trigger": "user_request",
+  "parent_run_id": null,
+  "source_scope": [
+    {
+      "source_ref": "pagila_pg",
+      "tables": [
+        "actor",
+        "address",
+        "category",
+        "city",
+        "country",
+        "customer",
+        "film",
+        "film_actor",
+        "film_category",
+        "inventory",
+        "language",
+        "payment",
+        "rental",
+        "staff",
+        "store"
+      ]
+    }
+  ],
+  "regression": null,
+  "created_at": "2026-10-18T16:13:43.117072Z",
+  "user_request": "tổng doanh thu số đơn hàng của từng khách hàng, kèm tên khách hàng",
+  "status": "APPROVED",
+  "stage_reached": "review",
+  "plan": {
+    "domain": "rental",
+    "summary": "Tính tổng doanh thu và số đơn hàng của từng khách hàng, kèm tên khách hàng.",
+    "model_name": "fct_customer_revenue",
+    "sources": [
+      {
+        "id": "customer",
+        "source_ref": "pagila_pg",
+        "object": "customer",
+        "purpose": "lấy thông tin khách hàng"
+      },
+      {
+        "id": "payment",
+        "source_ref": "pagila_pg",
+        "object": "payment",
+        "purpose": "lấy thông tin thanh toán"
+      }
+    ],
+    "joins": [
+      {
+        "left": "payment.customer_id",
+        "right": "customer.customer_id",
+        "type": "inner"
+      }
+    ],
+    "grain": [
+      "customer.customer_id"
+    ],
+    "metrics": [
+      {
+        "name": "total_revenue",
+        "definition": "tổng số tiền thanh toán của khách hàng"
+      },
+      {
+        "name": "order_count",
+        "definition": "số lượng đơn hàng của khách hàng"
+      }
+    ],
+    "filters": [],
+    "schedule": "0 2 * * *",
+    "question": null,
+    "concepts": [
+      {
+        "term": "doanh thu",
+        "column": "payment.amount"
+      },
+      {
+        "term": "khách hàng",
+        "column": "customer.first_name"
+      },
+      {
+        "term": "số đơn hàng",
+        "column": "payment.payment_id"
+      }
+    ]
+  },
+  "spec": {
+    "spec_version": "1.2",
+    "domain": "rental",
+    "sources": [
+      {
+        "id": "customer",
+        "source_ref": "pagila_pg",
+        "primary_key": [
+          "customer_id"
+        ],
+        "cursor_field": null,
+        "write_disposition": "replace",
+        "target": {
+          "dataset": "bronze",
+          "table": "raw_customer"
+        },
+        "staging": {
+          "columns": [
+            {
+              "from": "customer_id",
+              "as": "customer_id",
+              "type": "integer",
+              "date_formats": null,
+              "currency": null
+            },
+            {
+              "from": "first_name",
+              "as": "first_name",
+              "type": "varchar",
+              "date_formats": null,
+              "currency": null
+            }
+          ],
+          "dedupe": {
+            "keys": [
+              "customer_id"
+            ],
+            "keep": "first",
+            "order_by": "customer_id"
+          },
+          "reject_if": [
+            "customer_id IS NULL"
+          ]
+        },
+        "kind": "postgres",
+        "table": "customer"
+      },
+      {
+        "id": "payment",
+        "source_ref": "pagila_pg",
+        "primary_key": [
+          "payment_id"
+        ],
+        "cursor_field": null,
+        "write_disposition": "replace",
+        "target": {
+          "dataset": "bronze",
+          "table": "raw_payment"
+        },
+        "staging": {
+          "columns": [
+            {
+              "from": "payment_id",
+              "as": "payment_id",
+              "type": "integer",
+              "date_formats": null,
+              "currency": null
+            },
+            {
+              "from": "customer_id",
+              "as": "customer_id",
+              "type": "integer",
+              "date_formats": null,
+              "currency": null
+            },
+            {
+              "from": "amount",
+              "as": "amount",
+              "type": "decimal(18,2)",
+              "date_formats": null,
+              "currency": null
+            }
+          ],
+          "dedupe": {
+            "keys": [
+              "payment_id"
+            ],
+            "keep": "first",
+            "order_by": "payment_id"
+          },
+          "reject_if": [
+            "customer_id IS NULL",
+            "amount < 0"
+          ]
+        },
+        "kind": "postgres",
+        "table": "payment"
+      }
+    ],
+    "transform": {
+      "model_name": "fct_customer_revenue",
+      "from": "customer",
+      "joins": [
+        {
+          "source": "payment",
+          "type": "inner",
+          "on": [
+            [
+              "payment.customer_id",
+              "customer.customer_id"
+            ]
+          ]
+        }
+      ],
+      "materialization": "incremental",
+      "unique_key": [
+        "customer_id"
+      ],
+      "grain": [
+        "customer.customer_id"
+      ],
+      "time_grain": null,
+      "metrics": [
+        {
+          "name": "total_revenue",
+          "expr": "SUM(payment.amount)"
+        },
+        {
+          "name": "order_count",
+          "expr": "COUNT(payment.payment_id)"
+        }
+      ],
+      "filters": [],
+      "partition_by": "customer_id",
+      "tests": [
+        {
+          "column": "customer_id",
+          "test": "not_null"
+        },
+        {
+          "column": "total_revenue",
+          "test": "not_negative"
+        }
+      ]
+    },
+    "schedule": {
+      "cron": "0 2 * * *"
+    },
+    "estimates": {
+      "bytes_scanned": 0,
+      "usd": 0.0,
+      "latency_sec": 0.0
+    }
+  },
+  "spec_history": [
+    {
+      "attempt": 1,
+      "spec": {
+        "spec_version": "1.2",
+        "domain": "rental",
+        "sources": [
+          {
+            "id": "customer",
+            "kind": "postgres",
+            "source_ref": "pagila_pg",
+            "table": "customer",
+            "primary_key": [
+              "customer_id"
+            ],
+            "cursor_field": null,
+            "write_disposition": "replace",
+            "target": {
+              "dataset": "bronze",
+              "table": "raw_customer"
+            },
+            "staging": {
+              "columns": [
+                {
+                  "from": "customer_id",
+                  "as": "customer_id",
+                  "type": "integer"
+                },
+                {
+                  "from": "first_name",
+                  "as": "first_name",
+                  "type": "varchar"
+                }
+              ],
+              "dedupe": {
+                "keys": [
+                  "customer_id"
+                ],
+                "keep": "first",
+                "order_by": "customer_id"
+              },
+              "reject_if": [
+                "customer_id IS NULL"
+              ]
+            }
+          },
+          {
+            "id": "payment",
+            "kind": "postgres",
+            "source_ref": "pagila_pg",
+            "table": "payment",
+            "primary_key": [
+              "payment_id"
+            ],
+            "cursor_field": null,
+            "write_disposition": "replace",
+            "target": {
+              "dataset": "bronze",
+              "table": "raw_payment"
+            },
+            "staging": {
+              "columns": [
+                {
+                  "from": "payment_id",
+                  "as": "payment_id",
+                  "type": "integer"
+                },
+                {
+                  "from": "customer_id",
+                  "as": "customer_id",
+                  "type": "integer"
+                },
+                {
+                  "from": "amount",
+                  "as": "amount",
+                  "type": "decimal(18,2)"
+                }
+              ],
+              "dedupe": {
+                "keys": [
+                  "payment_id"
+                ],
+                "keep": "first",
+                "order_by": "payment_id"
+              },
+              "reject_if": [
+                "customer_id IS NULL",
+                "amount < 0"
+              ]
+            }
+          }
+        ],
+        "transform": {
+          "model_name": "fct_customer_revenue",
+          "from": "customer",
+          "joins": [
+            {
+              "source": "payment",
+              "type": "inner",
+              "on": [
+                [
+                  "payment.customer_id",
+                  "customer.customer_id"
+                ]
+              ]
+            }
+          ],
+          "materialization": "incremental",
+          "unique_key": [
+            "customer_id"
+          ],
+          "grain": [
+            "customer.customer_id"
+          ],
+          "metrics": [
+            {
+              "name": "total_revenue",
+              "expr": "SUM(payment.amount)"
+            },
+            {
+              "name": "order_count",
+              "expr": "COUNT(payment.payment_id)"
+            }
+          ],
+          "filters": [],
+          "partition_by": "customer_id",
+          "tests": [
+            {
+              "column": "customer_id",
+              "test": "not_null"
+            },
+            {
+              "column": "total_revenue",
+              "test": "not_negative"
+            }
+          ]
+        },
+        "schedule": {
+          "cron": "0 2 * * *"
+        },
+        "estimates": {
+          "bytes_scanned": 0,
+          "usd": 0.0,
+          "latency_sec": 0
+        }
+      },
+      "errors": []
+    },
+    {
+      "version": 1,
+      "reason": "Minh giữ nguyên Spec của agent, xác nhận đúng nhu cầu và cho chạy thử"
+    }
+  ],
+  "files": {
+    "dbt_project/models/gold/fct_customer_revenue.sql": "sha256:179a6cb6d9ec492795dfede2f06c95a028a765da0ea3096dbfd72be9320075ed",
+    "dbt_project/models/gold/fct_customer_revenue.yml": "sha256:3ace6f2591dfdd48b5d65dcc5d9b3bdc91255a442d129e4e5281b614b8c4b240",
+    "dbt_project/models/staging/stg_fct_customer_revenue__customer.sql": "sha256:8144edc6917900e36802f275c4697ae6d9e7ec0dd674da8d44fff169b06950c7",
+    "dbt_project/models/staging/stg_fct_customer_revenue__payment.sql": "sha256:5c8f5985f5df5123498285743ea6e2425b69d9c492ac1deedea65402b20c9531",
+    "infra/dagster/generated/fct_customer_revenue_asset.py": "sha256:89b42978b215f6abde0eb6347e8c3ae59a01bb936a86124c3305f798bcec0924",
+    "ingestion/fct_customer_revenue_pipeline.py": "sha256:76a09ad750192081c8031000db957b7b236fd733934538c67f287630adcf417d"
+  },
+  "files_hash": "sha256:e5dc12b18cee4ded8a8b686616278cd97f69961cf24b72cc01da46749277b34b",
+  "gates": [
+    {
+      "name": "semantic",
+      "result": "pass",
+      "detail": "'customer' dùng định nghĩa của domain rental theo nguồn đã chọn: khách có tài khoản thuê DVD tại một cửa hàng",
+      "observed": {
+        "resolved": {
+          "customer": "rental"
+        }
+      }
+    },
+    {
+      "name": "spec_schema",
+      "result": "pass",
+      "detail": "Spec hợp lệ",
+      "observed": {}
+    },
+    {
+      "name": "schema_real",
+      "result": "pass",
+      "detail": "Mọi cột Spec dùng có ở nguồn",
+      "observed": {
+        "sources": 2,
+        "columns": {
+          "customer": {
+            "customer_id": "integer",
+            "first_name": "text"
+          },
+          "payment": {
+            "amount": "numeric",
+            "customer_id": "smallint",
+            "payment_id": "integer"
+          }
+        }
+      }
+    },
+    {
+      "name": "currency",
+      "result": "pass",
+      "detail": "Cột tiền có mã tiền tệ ở nguồn đều được quy đổi về tiền gốc của domain",
+      "observed": {}
+    },
+    {
+      "name": "join_fanout",
+      "result": "pass",
+      "detail": "Không chỉ số nào cộng trùng dòng do ghép bảng",
+      "observed": {
+        "multiplied": {},
+        "preaggregated": [
+          "payment"
+        ]
+      }
+    },
+    {
+      "name": "filter_values",
+      "result": "pass",
+      "detail": "Bộ lọc chỉ dùng giá trị có trong dòng mẫu",
+      "observed": {}
+    },
+    {
+      "name": "ast_guard",
+      "result": "pass",
+      "detail": "Biểu thức chỉ dùng cột và hàm được phép",
+      "observed": {}
+    },
+    {
+      "name": "budget",
+      "result": "pass",
+      "detail": "Metadata Parquet trên Azure 411,838 byte ≈ 0.000002 USD (customer 6,433 byte, payment 199,486 byte, cộng model); hôm nay đã dùng 0.003266/2.0 USD",
+      "observed": {
+        "sources": {
+          "customer": 6433,
+          "payment": 199486
+        },
+        "model_bytes": 205919,
+        "bytes": 411838,
+        "usd": 2.05919e-6,
+        "estimated": false,
+        "measured": {
+          "warehouse": "azure_blob_parquet",
+          "sources": {
+            "customer": {
+              "bytes": 6433,
+              "files": 1,
+              "footer_bytes": 1156,
+              "columns": {
+                "customer_id": 2427,
+                "first_name": 4006
+              },
+              "prefix": "pagila_pg/customer/"
+            },
+            "payment": {
+              "bytes": 199486,
+              "files": 1,
+              "footer_bytes": 733,
+              "columns": {
+                "payment_id": 128412,
+                "customer_id": 32111,
+                "amount": 38963
+              },
+              "prefix": "pagila_pg/payment/"
+            }
+          }
+        },
+        "spent_today_usd": 0.0032662368799999996,
+        "max_bytes_scanned": 5000000000,
+        "max_usd": 0.05,
+        "max_usd_per_day": 2.0
+      }
+    },
+    {
+      "name": "arbitrate",
+      "result": "pass",
+      "detail": "giữ lịch của Spec '0 2 * * *': dữ liệu cũ nhất 1440 phút ≤ 1440 phút",
+      "observed": {
+        "freshness_minutes": 1440,
+        "soft_cost_usd_per_day": 0.5,
+        "proposals": [
+          {
+            "cron": "0 2 * * *",
+            "from_spec": true,
+            "max_gap_minutes": 1440,
+            "runs_per_day": 1.0,
+            "usd_per_day": 2.05919e-6,
+            "feasible": true
+          },
+          {
+            "cron": "*/15 * * * *",
+            "from_spec": false,
+            "max_gap_minutes": 15,
+            "runs_per_day": 96.0,
+            "usd_per_day": 0.00019768223999999999,
+            "feasible": true
+          },
+          {
+            "cron": "*/30 * * * *",
+            "from_spec": false,
+            "max_gap_minutes": 30,
+            "runs_per_day": 48.0,
+            "usd_per_day": 0.00009884111999999999,
+            "feasible": true
+          },
+          {
+            "cron": "0 * * * *",
+            "from_spec": false,
+            "max_gap_minutes": 60,
+            "runs_per_day": 24.0,
+            "usd_per_day": 0.000049420559999999996,
+            "feasible": true
+          },
+          {
+            "cron": "0 */6 * * *",
+            "from_spec": false,
+            "max_gap_minutes": 360,
+            "runs_per_day": 4.0,
+            "usd_per_day": 8.23676e-6,
+            "feasible": true
+          }
+        ],
+        "chosen": "0 2 * * *"
+      }
+    },
+    {
+      "name": "post_run",
+      "result": "pass",
+      "detail": "10/10 phép kiểm tra đạt",
+      "observed": {
+        "gold_rows": 599,
+        "gold_samples": [
+          {
+            "customer_id": "1",
+            "total_revenue": "439.37",
+            "order_count": "64"
+          },
+          {
+            "customer_id": "2",
+            "total_revenue": "377.00",
+            "order_count": "54"
+          },
+          {
+            "customer_id": "3",
+            "total_revenue": "365.56",
+            "order_count": "52"
+          },
+          {
+            "customer_id": "4",
+            "total_revenue": "276.41",
+            "order_count": "44"
+          },
+          {
+            "customer_id": "5",
+            "total_revenue": "502.08",
+            "order_count": "76"
+          },
+          {
+            "customer_id": "6",
+            "total_revenue": "378.98",
+            "order_count": "56"
+          },
+          {
+            "customer_id": "7",
+            "total_revenue": "490.08",
+            "order_count": "66"
+          },
+          {
+            "customer_id": "8",
+            "total_revenue": "339.26",
+            "order_count": "48"
+          },
+          {
+            "customer_id": "9",
+            "total_revenue": "298.70",
+            "order_count": "46"
+          },
+          {
+            "customer_id": "10",
+            "total_revenue": "372.31",
+            "order_count": "50"
+          },
+          {
+            "customer_id": "11",
+            "total_revenue": "354.41",
+            "order_count": "48"
+          },
+          {
+            "customer_id": "12",
+            "total_revenue": "405.89",
+            "order_count": "56"
+          },
+          {
+            "customer_id": "13",
+            "total_revenue": "397.37",
+            "order_count": "54"
+          },
+          {
+            "customer_id": "14",
+            "total_revenue": "377.95",
+            "order_count": "56"
+          },
+          {
+            "customer_id": "15",
+            "total_revenue": "444.35",
+            "order_count": "64"
+          },
+          {
+            "customer_id": "16",
+            "total_revenue": "403.95",
+            "order_count": "57"
+          },
+          {
+            "customer_id": "17",
+            "total_revenue": "322.69",
+            "order_count": "42"
+          },
+          {
+            "customer_id": "18",
+            "total_revenue": "322.94",
+            "order_count": "44"
+          },
+          {
+            "customer_id": "19",
+            "total_revenue": "375.25",
+            "order_count": "48"
+          },
+          {
+            "customer_id": "20",
+            "total_revenue": "417.60",
+            "order_count": "60"
+          }
+        ],
+        "gold_profile": [
+          {
+            "name": "customer_id",
+            "type": "INTEGER",
+            "non_null": 599,
+            "sum": "179700",
+            "min": "1",
+            "max": "599"
+          },
+          {
+            "name": "total_revenue",
+            "type": "DECIMAL(38,2)",
+            "non_null": 599,
+            "sum": "227768.87",
+            "min": "176.45",
+            "max": "663.73"
+          },
+          {
+            "name": "order_count",
+            "type": "HUGEINT",
+            "non_null": 599,
+            "sum": "32093",
+            "min": "24",
+            "max": "92"
+          }
+        ],
+        "warehouse_timezone": "UTC"
+      }
+    }
+  ],
+  "checks": [
+    {
+      "name": "row_reconcile",
+      "source_id": "customer",
+      "result": "pass",
+      "observed": {
+        "source": 599,
+        "bronze": 599
+      }
+    },
+    {
+      "name": "row_reconcile",
+      "source_id": "payment",
+      "result": "pass",
+      "observed": {
+        "source": 32093,
+        "bronze": 32093
+      }
+    },
+    {
+      "name": "hash_reconcile",
+      "source_id": "customer",
+      "result": "pass",
+      "observed": {
+        "key_columns": [
+          "customer_id"
+        ],
+        "source_keys": 599,
+        "bronze_keys": 599,
+        "source_hash": "f9240c9fac5397da",
+        "bronze_hash": "f9240c9fac5397da",
+        "missing_in_bronze": [],
+        "extra_in_bronze": []
+      }
+    },
+    {
+      "name": "hash_reconcile",
+      "source_id": "payment",
+      "result": "pass",
+      "observed": {
+        "key_columns": [
+          "payment_id"
+        ],
+        "source_keys": 32093,
+        "bronze_keys": 32093,
+        "source_hash": "0829cd36fb806465",
+        "bronze_hash": "0829cd36fb806465",
+        "missing_in_bronze": [],
+        "extra_in_bronze": []
+      }
+    },
+    {
+      "name": "idempotent",
+      "source_id": "customer",
+      "result": "pass",
+      "observed": {
+        "first_rows": 599,
+        "second_rows": 599,
+        "first_hash": "f9240c9fac5397da",
+        "second_hash": "f9240c9fac5397da",
+        "write_disposition": "replace"
+      }
+    },
+    {
+      "name": "idempotent",
+      "source_id": "payment",
+      "result": "pass",
+      "observed": {
+        "first_rows": 32093,
+        "second_rows": 32093,
+        "first_hash": "0829cd36fb806465",
+        "second_hash": "0829cd36fb806465",
+        "write_disposition": "replace"
+      }
+    },
+    {
+      "name": "staging_reconcile",
+      "source_id": "customer",
+      "result": "pass",
+      "observed": {
+        "bronze": 599,
+        "staging": 599,
+        "duplicates": 0,
+        "rejected": 0,
+        "reject_pct": 0.0,
+        "max_reject_pct": 1.0,
+        "reject_reasons": {},
+        "reject_samples": []
+      }
+    },
+    {
+      "name": "staging_reconcile",
+      "source_id": "payment",
+      "result": "pass",
+      "observed": {
+        "bronze": 32093,
+        "staging": 32093,
+        "duplicates": 0,
+        "rejected": 0,
+        "reject_pct": 0.0,
+        "max_reject_pct": 1.0,
+        "reject_reasons": {},
+        "reject_samples": []
+      }
+    },
+    {
+      "name": "dbt_test",
+      "source_id": null,
+      "result": "pass",
+      "observed": {
+        "passed": 6,
+        "failed": 0,
+        "failures": []
+      }
+    },
+    {
+      "name": "metric_reconcile",
+      "source_id": null,
+      "result": "pass",
+      "observed": {
+        "rows": {
+          "gold": 599,
+          "source": 599
+        },
+        "matched": 599,
+        "mismatch_count": 0,
+        "missing_count": 0,
+        "extra_count": 0,
+        "mismatched": [],
+        "missing_in_gold": [],
+        "extra_in_gold": [],
+        "totals": {
+          "total_revenue": {
+            "gold": "227768.87",
+            "source": "227768.87"
+          },
+          "order_count": {
+            "gold": "32093",
+            "source": "32093"
+          }
+        },
+        "shift_hours": null,
+        "engine": "postgres",
+        "sql": "WITH \"stg_customer\" AS MATERIALIZED (SELECT \"customer_id\", \"first_name\" FROM (SELECT *, row_number() OVER (PARTITION BY _key_0 ORDER BY _order ASC NULLS LAST, _ctid) AS _rank FROM (SELECT * FROM (SELECT CAST(src.\"customer_id\" AS integer) AS \"customer_id\", CAST(src.\"first_name\" AS text) AS \"first_name\", src.\"customer_id\" AS _raw_0, src.\"first_name\" AS _raw_1, src.\"customer_id\" AS _key_0, src.\"customer_id\" AS _order, src.ctid AS _ctid FROM \"pagila\".\"customer\" AS src) AS typed WHERE NOT ((_raw_0 IS NOT NULL AND \"customer_id\" IS NULL) OR (_raw_1 IS NOT NULL AND \"first_name\" IS NULL) OR (customer_id IS NULL) IS TRUE)) AS clean) AS ranked WHERE _rank = 1), \"stg_payment\" AS MATERIALIZED (SELECT \"payment_id\", \"customer_id\", \"amount\" FROM (SELECT *, row_number() OVER (PARTITION BY _key_0 ORDER BY _order ASC NULLS LAST, _ctid) AS _rank FROM (SELECT * FROM (SELECT CAST(src.\"payment_id\" AS integer) AS \"payment_id\", CAST(src.\"customer_id\" AS integer) AS \"customer_id\", CAST(src.\"amount\" AS numeric(18,2)) AS \"amount\", src.\"payment_id\" AS _raw_0, src.\"customer_id\" AS _raw_1, src.\"amount\" AS _raw_2, src.\"payment_id\" AS _key_0, src.\"payment_id\" AS _order, src.ctid AS _ctid FROM \"pagila\".\"payment\" AS src) AS typed WHERE NOT ((_raw_0 IS NOT NULL AND \"payment_id\" IS NULL) OR (_raw_1 IS NOT NULL AND \"customer_id\" IS NULL) OR (_raw_2 IS NOT NULL AND \"amount\" IS NULL) OR (customer_id IS NULL) IS TRUE OR (amount < 0) IS TRUE)) AS clean) AS ranked WHERE _rank = 1)\nSELECT customer.customer_id AS \"customer_id\", SUM(payment.__m1) AS \"total_revenue\", COALESCE(SUM(payment.__m2), 0) AS \"order_count\"\nFROM \"stg_customer\" AS \"customer\" INNER JOIN (SELECT payment.customer_id, SUM(payment.amount) AS __m1, COUNT(payment.payment_id) AS __m2 FROM \"stg_payment\" AS payment GROUP BY payment.customer_id) AS \"payment\" ON payment.customer_id = customer.customer_id\nWHERE true\nGROUP BY 1"
+      }
+    }
+  ],
+  "cost": {
+    "estimated_bytes": 411838,
+    "actual_bytes": 411838,
+    "usd": 2.05919e-6,
+    "llm_usd": 0.0014386499999999999
+  },
+  "timing": {
+    "baseline_sec": 12.839,
+    "optimized_sec": null
+  },
+  "optimizer": [],
+  "attempts": {
+    "spec": 0,
+    "sql": 0
+  },
+  "llm_calls": 2,
+  "llm_usage": [
+    {
+      "stage": "plan",
+      "tier": "cheap",
+      "model": "gpt-4o-mini",
+      "input_tokens": 2299,
+      "output_tokens": 292,
+      "usd": 0.00052005
+    },
+    {
+      "stage": "propose",
+      "tier": "strong",
+      "model": "gpt-4o-mini",
+      "input_tokens": 3500,
+      "output_tokens": 656,
+      "usd": 0.0009185999999999999
+    }
+  ],
+  "error_trace": [],
+  "approval": {
+    "decision": "approved",
+    "reviewer": "an",
+    "files_hash": "sha256:e5dc12b18cee4ded8a8b686616278cd97f69961cf24b72cc01da46749277b34b",
+    "version": 1,
+    "at": "2026-10-18T16:20:59.038489Z",
+    "comment": ""
+  },
+  "review_history": [
+    {
+      "decision": "approved",
+      "reviewer": "an",
+      "files_hash": "sha256:e5dc12b18cee4ded8a8b686616278cd97f69961cf24b72cc01da46749277b34b",
+      "version": 1,
+      "at": "2026-10-18T16:20:59.038489Z",
+      "comment": ""
+    }
+  ],
+  "timeline": [
+    {
+      "event": "submitted",
+      "at": "2026-10-18T16:13:43.117060Z",
+      "actor": "minh"
+    },
+    {
+      "event": "plan_ready",
+      "at": "2026-10-18T16:13:47.915408Z",
+      "actor": null
+    },
+    {
+      "event": "plan_confirmed",
+      "at": "2026-10-18T16:14:13.284241Z",
+      "actor": "minh"
+    },
+    {
+      "event": "spec_ready",
+      "at": "2026-10-18T16:14:19.936002Z",
+      "actor": null
+    },
+    {
+      "event": "mapping_submitted",
+      "at": "2026-10-18T16:14:51.569632Z",
+      "actor": "Minh"
+    },
+    {
+      "event": "finished",
+      "at": "2026-10-18T16:15:04.730628Z",
+      "actor": null
+    }
+  ]
+}
