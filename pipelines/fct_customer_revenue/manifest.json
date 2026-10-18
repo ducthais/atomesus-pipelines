@@ -1,17 +1,17 @@
 {
   "manifest_version": 1,
-  "run_id": "d56c2cc6-cdd3-435b-bd8b-5fb95509ada9",
+  "run_id": "9c5f0c5b-7a75-4bf1-89d9-a9b7103531e5",
   "version": 1,
   "model_name": "fct_customer_revenue",
-  "files_hash": "sha256:3012e054674b102e5f46197b3f720c86fa86aa5af6a0fdb928ed2d12239217a6",
+  "files_hash": "sha256:8c50858be875aab3343fa32a6888bb14ec223ec559445947eb7176b24cd8f088",
   "files": {
-    "dbt_project/models/gold/fct_customer_revenue.sql": "sha256:131c6df4dc98a2fe48838b08fca238528508ed5118827fbeba0def24f932f448",
+    "dbt_project/models/gold/fct_customer_revenue.sql": "sha256:179a6cb6d9ec492795dfede2f06c95a028a765da0ea3096dbfd72be9320075ed",
     "dbt_project/models/gold/fct_customer_revenue.yml": "sha256:3ace6f2591dfdd48b5d65dcc5d9b3bdc91255a442d129e4e5281b614b8c4b240",
-    "dbt_project/models/staging/stg_fct_customer_revenue__customer.sql": "sha256:a4437f7a3cabcb5b44c5d69c8cb06404abeb880ad9113601b9c1510e096fe6a7",
-    "dbt_project/models/staging/stg_fct_customer_revenue__payment.sql": "sha256:6971b8f49af679d6c9c02e7fa2c710132ade97aa58aaccee25208aa065804aff",
+    "dbt_project/models/staging/stg_fct_customer_revenue__customer.sql": "sha256:093d0f48fa359ff469f49719b167319ef20f6bb93320931a3b55198fb3f229b2",
+    "dbt_project/models/staging/stg_fct_customer_revenue__payment.sql": "sha256:aec0ce94ee370574c5464f49e2063acb922c1e7461d031c91e234af5f45d6fcb",
     "infra/dagster/generated/fct_customer_revenue_asset.py": "sha256:89b42978b215f6abde0eb6347e8c3ae59a01bb936a86124c3305f798bcec0924",
     "ingestion/fct_customer_revenue_pipeline.py": "sha256:76a09ad750192081c8031000db957b7b236fd733934538c67f287630adcf417d"
   },
   "reviewer": "an",
-  "approved_at": "2026-10-18T17:36:07.214860+00:00"
+  "approved_at": "2026-10-18T17:44:47.045748+00:00"
 }
