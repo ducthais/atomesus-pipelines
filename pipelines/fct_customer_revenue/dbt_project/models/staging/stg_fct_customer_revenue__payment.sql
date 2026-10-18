@@ -23,8 +23,10 @@ typed as (
         bronze."payment_id" as _raw_1,
         try_cast(bronze."customer_id" as integer) as "customer_id",
         bronze."customer_id" as _raw_2,
-        try_cast(bronze."amount" as decimal(18,2)) as "amount",
+        try_cast(bronze."amount" as decimal(18,2)) as "amount_usd",
         bronze."amount" as _raw_3,
+        try_cast(bronze."payment_date" as timestamp) as "payment_date",
+        bronze."payment_date" as _raw_4,
         bronze."payment_id" as _dedupe_key_1,
         bronze."payment_id" as _dedupe_order,
         bronze._dlt_id as _bronze_id
@@ -42,10 +44,12 @@ checked as (
                 then 'cast:payment_id'
             when _raw_2 is not null and "customer_id" is null
                 then 'cast:customer_id'
-            when _raw_3 is not null and "amount" is null
-                then 'cast:amount'
-            when (amount < 0)
-                then 'reject_if:amount < 0'
+            when _raw_3 is not null and "amount_usd" is null
+                then 'cast:amount_usd'
+            when _raw_4 is not null and "payment_date" is null
+                then 'cast:payment_date'
+            when (amount_usd < 0)
+                then 'reject_if:amount_usd < 0'
         end as _reject_reason
 
     from typed
@@ -69,7 +73,8 @@ clean as (
 select
     "payment_id",
     "customer_id",
-    "amount",
+    "amount_usd",
+    "payment_date",
     cast(null as varchar) as _reject_reason,
     cast(null as varchar) as _raw_values
 from clean
@@ -80,8 +85,9 @@ union all
 select
     "payment_id",
     "customer_id",
-    "amount",
+    "amount_usd",
+    "payment_date",
     _reject_reason,
-    cast(to_json({'payment_id': _raw_1, 'customer_id': _raw_2, 'amount': _raw_3}) as varchar) as _raw_values
+    cast(to_json({'payment_id': _raw_1, 'customer_id': _raw_2, 'amount': _raw_3, 'payment_date': _raw_4}) as varchar) as _raw_values
 from checked
 where _reject_reason is not null

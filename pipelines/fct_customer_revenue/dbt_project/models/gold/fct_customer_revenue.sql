@@ -10,7 +10,7 @@ select
     COALESCE(SUM(payment.__m2), 0) as "order_count"
 
 from {{ ref('stg_fct_customer_revenue__customer') }} as customer
-inner join (SELECT payment.customer_id, SUM(payment.amount) AS __m1, COUNT(payment.payment_id) AS __m2 FROM {{ ref('stg_fct_customer_revenue__payment') }} AS payment GROUP BY payment.customer_id) as payment
+inner join (SELECT payment.customer_id, SUM(payment.amount_usd) AS __m1, COUNT(payment.payment_id) AS __m2 FROM {{ ref('stg_fct_customer_revenue__payment') }} AS payment GROUP BY payment.customer_id) as payment
     on payment.customer_id = customer.customer_id
 
 where true
