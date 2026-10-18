@@ -25,8 +25,6 @@ typed as (
         bronze."first_name" as _raw_2,
         try_cast(bronze."last_name" as varchar) as "last_name",
         bronze."last_name" as _raw_3,
-        try_cast(bronze."create_date" as date) as "create_date",
-        bronze."create_date" as _raw_4,
         bronze."customer_id" as _dedupe_key_1,
         bronze."customer_id" as _dedupe_order,
         bronze._dlt_id as _bronze_id
@@ -46,8 +44,6 @@ checked as (
                 then 'cast:first_name'
             when _raw_3 is not null and "last_name" is null
                 then 'cast:last_name'
-            when _raw_4 is not null and "create_date" is null
-                then 'cast:create_date'
         end as _reject_reason
 
     from typed
@@ -72,7 +68,6 @@ select
     "customer_id",
     "first_name",
     "last_name",
-    "create_date",
     cast(null as varchar) as _reject_reason,
     cast(null as varchar) as _raw_values
 from clean
@@ -84,8 +79,7 @@ select
     "customer_id",
     "first_name",
     "last_name",
-    "create_date",
     _reject_reason,
-    cast(to_json({'customer_id': _raw_1, 'first_name': _raw_2, 'last_name': _raw_3, 'create_date': _raw_4}) as varchar) as _raw_values
+    cast(to_json({'customer_id': _raw_1, 'first_name': _raw_2, 'last_name': _raw_3}) as varchar) as _raw_values
 from checked
 where _reject_reason is not null

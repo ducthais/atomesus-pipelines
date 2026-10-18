@@ -1,5 +1,5 @@
 {
-  "run_id": "d56c2cc6-cdd3-435b-bd8b-5fb95509ada9",
+  "run_id": "9c5f0c5b-7a75-4bf1-89d9-a9b7103531e5",
   "version": 1,
   "domain": "rental",
   "created_by": "minh",
@@ -12,14 +12,13 @@
         "actor",
         "address",
         "category",
-        "country",
         "customer",
         "payment"
       ]
     }
   ],
   "regression": null,
-  "created_at": "2026-10-18T17:32:46.530940Z",
+  "created_at": "2026-10-18T17:42:23.882482Z",
   "user_request": "tổng doanh thu số đơn hàng của từng khách hàng, kèm tên khách hàng",
   "status": "APPROVED",
   "stage_reached": "review",
@@ -70,8 +69,16 @@
         "column": "payment.amount"
       },
       {
-        "term": "khách hàng",
+        "term": "số đơn hàng",
+        "column": "payment.payment_id"
+      },
+      {
+        "term": "tên khách hàng",
         "column": "customer.first_name"
+      },
+      {
+        "term": "tên khách hàng",
+        "column": "customer.last_name"
       }
     ]
   },
@@ -111,13 +118,6 @@
               "from": "last_name",
               "as": "last_name",
               "type": "varchar",
-              "date_formats": null,
-              "currency": null
-            },
-            {
-              "from": "create_date",
-              "as": "create_date",
-              "type": "date",
               "date_formats": null,
               "currency": null
             }
@@ -164,15 +164,8 @@
             },
             {
               "from": "amount",
-              "as": "amount_usd",
+              "as": "amount",
               "type": "decimal(18,2)",
-              "date_formats": null,
-              "currency": null
-            },
-            {
-              "from": "payment_date",
-              "as": "payment_date",
-              "type": "timestamp",
               "date_formats": null,
               "currency": null
             }
@@ -184,9 +177,7 @@
             "keep": "first",
             "order_by": "payment_id"
           },
-          "reject_if": [
-            "amount_usd < 0"
-          ]
+          "reject_if": []
         },
         "kind": "postgres",
         "table": "payment"
@@ -218,7 +209,7 @@
       "metrics": [
         {
           "name": "total_revenue",
-          "expr": "SUM(payment.amount_usd)"
+          "expr": "SUM(payment.amount)"
         },
         {
           "name": "order_count",
@@ -226,7 +217,7 @@
         }
       ],
       "filters": [],
-      "partition_by": null,
+      "partition_by": "customer_id",
       "tests": [
         {
           "column": "customer_id",
@@ -284,12 +275,6 @@
                   "from": "last_name",
                   "as": "last_name",
                   "type": "varchar"
-                },
-                {
-                  "from": "create_date",
-                  "as": "create_date",
-                  "type": "date",
-                  "date_formats": null
                 }
               ],
               "dedupe": {
@@ -330,13 +315,8 @@
                 },
                 {
                   "from": "amount",
-                  "as": "amount_usd",
+                  "as": "amount",
                   "type": "decimal(18,2)"
-                },
-                {
-                  "from": "payment_date",
-                  "as": "payment_date",
-                  "type": "timestamp"
                 }
               ],
               "dedupe": {
@@ -346,9 +326,7 @@
                 "keep": "first",
                 "order_by": "payment_id"
               },
-              "reject_if": [
-                "amount_usd < 0"
-              ]
+              "reject_if": []
             }
           }
         ],
@@ -377,7 +355,7 @@
           "metrics": [
             {
               "name": "total_revenue",
-              "expr": "SUM(payment.amount_usd)"
+              "expr": "SUM(payment.amount)"
             },
             {
               "name": "order_count",
@@ -386,6 +364,7 @@
           ],
           "filters": [],
           "time_grain": null,
+          "partition_by": "customer_id",
           "tests": [
             {
               "column": "customer_id",
@@ -414,14 +393,14 @@
     }
   ],
   "files": {
-    "dbt_project/models/gold/fct_customer_revenue.sql": "sha256:131c6df4dc98a2fe48838b08fca238528508ed5118827fbeba0def24f932f448",
+    "dbt_project/models/gold/fct_customer_revenue.sql": "sha256:179a6cb6d9ec492795dfede2f06c95a028a765da0ea3096dbfd72be9320075ed",
     "dbt_project/models/gold/fct_customer_revenue.yml": "sha256:3ace6f2591dfdd48b5d65dcc5d9b3bdc91255a442d129e4e5281b614b8c4b240",
-    "dbt_project/models/staging/stg_fct_customer_revenue__customer.sql": "sha256:a4437f7a3cabcb5b44c5d69c8cb06404abeb880ad9113601b9c1510e096fe6a7",
-    "dbt_project/models/staging/stg_fct_customer_revenue__payment.sql": "sha256:6971b8f49af679d6c9c02e7fa2c710132ade97aa58aaccee25208aa065804aff",
+    "dbt_project/models/staging/stg_fct_customer_revenue__customer.sql": "sha256:093d0f48fa359ff469f49719b167319ef20f6bb93320931a3b55198fb3f229b2",
+    "dbt_project/models/staging/stg_fct_customer_revenue__payment.sql": "sha256:aec0ce94ee370574c5464f49e2063acb922c1e7461d031c91e234af5f45d6fcb",
     "infra/dagster/generated/fct_customer_revenue_asset.py": "sha256:89b42978b215f6abde0eb6347e8c3ae59a01bb936a86124c3305f798bcec0924",
     "ingestion/fct_customer_revenue_pipeline.py": "sha256:76a09ad750192081c8031000db957b7b236fd733934538c67f287630adcf417d"
   },
-  "files_hash": "sha256:3012e054674b102e5f46197b3f720c86fa86aa5af6a0fdb928ed2d12239217a6",
+  "files_hash": "sha256:8c50858be875aab3343fa32a6888bb14ec223ec559445947eb7176b24cd8f088",
   "gates": [
     {
       "name": "semantic",
@@ -447,7 +426,6 @@
         "sources": 2,
         "columns": {
           "customer": {
-            "create_date": "date",
             "customer_id": "integer",
             "first_name": "text",
             "last_name": "text"
@@ -455,7 +433,6 @@
           "payment": {
             "amount": "numeric",
             "customer_id": "smallint",
-            "payment_date": "timestamp with time zone",
             "payment_id": "integer"
           }
         }
@@ -493,46 +470,44 @@
     {
       "name": "budget",
       "result": "pass",
-      "detail": "Metadata Parquet trên Azure 669,838 byte ≈ 0.000003 USD (customer 10,964 byte, payment 323,955 byte, cộng model); hôm nay đã dùng 0.007499/2.0 USD",
+      "detail": "Metadata Parquet trên Azure 420,800 byte ≈ 0.000002 USD (customer 10,914 byte, payment 199,486 byte, cộng model); hôm nay đã dùng 0.008898/2.0 USD",
       "observed": {
         "sources": {
-          "customer": 10964,
-          "payment": 323955
+          "customer": 10914,
+          "payment": 199486
         },
-        "model_bytes": 334919,
-        "bytes": 669838,
-        "usd": 3.34919e-6,
+        "model_bytes": 210400,
+        "bytes": 420800,
+        "usd": 2.104e-6,
         "estimated": false,
         "measured": {
           "warehouse": "azure_blob_parquet",
           "sources": {
             "customer": {
-              "bytes": 10964,
+              "bytes": 10914,
               "files": 1,
               "footer_bytes": 1156,
               "columns": {
                 "customer_id": 2427,
                 "first_name": 4006,
-                "last_name": 4481,
-                "create_date": 50
+                "last_name": 4481
               },
               "prefix": "pagila_pg/customer/"
             },
             "payment": {
-              "bytes": 323955,
+              "bytes": 199486,
               "files": 1,
               "footer_bytes": 733,
               "columns": {
                 "payment_id": 128412,
                 "customer_id": 32111,
-                "amount": 38963,
-                "payment_date": 124469
+                "amount": 38963
               },
               "prefix": "pagila_pg/payment/"
             }
           }
         },
-        "spent_today_usd": 0.00749864876,
+        "spent_today_usd": 0.008898047949999998,
         "max_bytes_scanned": 5000000000,
         "max_usd": 0.05,
         "max_usd_per_day": 2.0
@@ -551,7 +526,7 @@
             "from_spec": true,
             "max_gap_minutes": 1440,
             "runs_per_day": 1.0,
-            "usd_per_day": 3.34919e-6,
+            "usd_per_day": 2.104e-6,
             "feasible": true
           },
           {
@@ -559,7 +534,7 @@
             "from_spec": false,
             "max_gap_minutes": 15,
             "runs_per_day": 96.0,
-            "usd_per_day": 0.00032152224,
+            "usd_per_day": 0.000201984,
             "feasible": true
           },
           {
@@ -567,7 +542,7 @@
             "from_spec": false,
             "max_gap_minutes": 30,
             "runs_per_day": 48.0,
-            "usd_per_day": 0.00016076112,
+            "usd_per_day": 0.000100992,
             "feasible": true
           },
           {
@@ -575,7 +550,7 @@
             "from_spec": false,
             "max_gap_minutes": 60,
             "runs_per_day": 24.0,
-            "usd_per_day": 0.00008038056,
+            "usd_per_day": 0.000050496,
             "feasible": true
           },
           {
@@ -583,7 +558,7 @@
             "from_spec": false,
             "max_gap_minutes": 360,
             "runs_per_day": 4.0,
-            "usd_per_day": 0.00001339676,
+            "usd_per_day": 8.416e-6,
             "feasible": true
           }
         ],
@@ -871,18 +846,18 @@
         },
         "shift_hours": null,
         "engine": "postgres",
-        "sql": "WITH \"stg_customer\" AS MATERIALIZED (SELECT \"customer_id\", \"first_name\", \"last_name\", \"create_date\" FROM (SELECT *, row_number() OVER (PARTITION BY _key_0 ORDER BY _order ASC NULLS LAST, _ctid) AS _rank FROM (SELECT * FROM (SELECT CAST(src.\"customer_id\" AS integer) AS \"customer_id\", CAST(src.\"first_name\" AS text) AS \"first_name\", CAST(src.\"last_name\" AS text) AS \"last_name\", CAST(src.\"create_date\" AS date) AS \"create_date\", src.\"customer_id\" AS _raw_0, src.\"first_name\" AS _raw_1, src.\"last_name\" AS _raw_2, src.\"create_date\" AS _raw_3, src.\"customer_id\" AS _key_0, src.\"customer_id\" AS _order, src.ctid AS _ctid FROM \"pagila\".\"customer\" AS src) AS typed WHERE NOT ((_raw_0 IS NOT NULL AND \"customer_id\" IS NULL) OR (_raw_1 IS NOT NULL AND \"first_name\" IS NULL) OR (_raw_2 IS NOT NULL AND \"last_name\" IS NULL) OR (_raw_3 IS NOT NULL AND \"create_date\" IS NULL))) AS clean) AS ranked WHERE _rank = 1), \"stg_payment\" AS MATERIALIZED (SELECT \"payment_id\", \"customer_id\", \"amount_usd\", \"payment_date\" FROM (SELECT *, row_number() OVER (PARTITION BY _key_0 ORDER BY _order ASC NULLS LAST, _ctid) AS _rank FROM (SELECT * FROM (SELECT CAST(src.\"payment_id\" AS integer) AS \"payment_id\", CAST(src.\"customer_id\" AS integer) AS \"customer_id\", CAST(src.\"amount\" AS numeric(18,2)) AS \"amount_usd\", CAST((src.\"payment_date\" AT TIME ZONE 'UTC') AS timestamp) AS \"payment_date\", src.\"payment_id\" AS _raw_0, src.\"customer_id\" AS _raw_1, src.\"amount\" AS _raw_2, src.\"payment_date\" AS _raw_3, src.\"payment_id\" AS _key_0, src.\"payment_id\" AS _order, src.ctid AS _ctid FROM \"pagila\".\"payment\" AS src) AS typed WHERE NOT ((_raw_0 IS NOT NULL AND \"payment_id\" IS NULL) OR (_raw_1 IS NOT NULL AND \"customer_id\" IS NULL) OR (_raw_2 IS NOT NULL AND \"amount_usd\" IS NULL) OR (_raw_3 IS NOT NULL AND \"payment_date\" IS NULL) OR (amount_usd < 0) IS TRUE)) AS clean) AS ranked WHERE _rank = 1)\nSELECT customer.customer_id AS \"customer_id\", SUM(payment.__m1) AS \"total_revenue\", COALESCE(SUM(payment.__m2), 0) AS \"order_count\"\nFROM \"stg_customer\" AS \"customer\" INNER JOIN (SELECT payment.customer_id, SUM(payment.amount_usd) AS __m1, COUNT(payment.payment_id) AS __m2 FROM \"stg_payment\" AS payment GROUP BY payment.customer_id) AS \"payment\" ON payment.customer_id = customer.customer_id\nWHERE true\nGROUP BY 1"
+        "sql": "WITH \"stg_customer\" AS MATERIALIZED (SELECT \"customer_id\", \"first_name\", \"last_name\" FROM (SELECT *, row_number() OVER (PARTITION BY _key_0 ORDER BY _order ASC NULLS LAST, _ctid) AS _rank FROM (SELECT * FROM (SELECT CAST(src.\"customer_id\" AS integer) AS \"customer_id\", CAST(src.\"first_name\" AS text) AS \"first_name\", CAST(src.\"last_name\" AS text) AS \"last_name\", src.\"customer_id\" AS _raw_0, src.\"first_name\" AS _raw_1, src.\"last_name\" AS _raw_2, src.\"customer_id\" AS _key_0, src.\"customer_id\" AS _order, src.ctid AS _ctid FROM \"pagila\".\"customer\" AS src) AS typed WHERE NOT ((_raw_0 IS NOT NULL AND \"customer_id\" IS NULL) OR (_raw_1 IS NOT NULL AND \"first_name\" IS NULL) OR (_raw_2 IS NOT NULL AND \"last_name\" IS NULL))) AS clean) AS ranked WHERE _rank = 1), \"stg_payment\" AS MATERIALIZED (SELECT \"payment_id\", \"customer_id\", \"amount\" FROM (SELECT *, row_number() OVER (PARTITION BY _key_0 ORDER BY _order ASC NULLS LAST, _ctid) AS _rank FROM (SELECT * FROM (SELECT CAST(src.\"payment_id\" AS integer) AS \"payment_id\", CAST(src.\"customer_id\" AS integer) AS \"customer_id\", CAST(src.\"amount\" AS numeric(18,2)) AS \"amount\", src.\"payment_id\" AS _raw_0, src.\"customer_id\" AS _raw_1, src.\"amount\" AS _raw_2, src.\"payment_id\" AS _key_0, src.\"payment_id\" AS _order, src.ctid AS _ctid FROM \"pagila\".\"payment\" AS src) AS typed WHERE NOT ((_raw_0 IS NOT NULL AND \"payment_id\" IS NULL) OR (_raw_1 IS NOT NULL AND \"customer_id\" IS NULL) OR (_raw_2 IS NOT NULL AND \"amount\" IS NULL))) AS clean) AS ranked WHERE _rank = 1)\nSELECT customer.customer_id AS \"customer_id\", SUM(payment.__m1) AS \"total_revenue\", COALESCE(SUM(payment.__m2), 0) AS \"order_count\"\nFROM \"stg_customer\" AS \"customer\" INNER JOIN (SELECT payment.customer_id, SUM(payment.amount) AS __m1, COUNT(payment.payment_id) AS __m2 FROM \"stg_payment\" AS payment GROUP BY payment.customer_id) AS \"payment\" ON payment.customer_id = customer.customer_id\nWHERE true\nGROUP BY 1"
       }
     }
   ],
   "cost": {
-    "estimated_bytes": 669838,
-    "actual_bytes": 669838,
-    "usd": 3.34919e-6,
-    "llm_usd": 0.0014072999999999998
+    "estimated_bytes": 420800,
+    "actual_bytes": 420800,
+    "usd": 2.104e-6,
+    "llm_usd": 0.00139605
   },
   "timing": {
-    "baseline_sec": 12.002,
+    "baseline_sec": 11.993,
     "optimized_sec": null
   },
   "optimizer": [],
@@ -896,67 +871,67 @@
       "stage": "plan",
       "tier": "cheap",
       "model": "gpt-4o-mini",
-      "input_tokens": 1875,
-      "output_tokens": 274,
-      "usd": 0.00044564999999999996
+      "input_tokens": 1861,
+      "output_tokens": 311,
+      "usd": 0.00046575
     },
     {
       "stage": "propose",
       "tier": "strong",
       "model": "gpt-4o-mini",
-      "input_tokens": 3483,
-      "output_tokens": 732,
-      "usd": 0.0009616499999999999
+      "input_tokens": 3518,
+      "output_tokens": 671,
+      "usd": 0.0009303
     }
   ],
   "error_trace": [],
   "approval": {
     "decision": "approved",
     "reviewer": "an",
-    "files_hash": "sha256:3012e054674b102e5f46197b3f720c86fa86aa5af6a0fdb928ed2d12239217a6",
+    "files_hash": "sha256:8c50858be875aab3343fa32a6888bb14ec223ec559445947eb7176b24cd8f088",
     "version": 1,
-    "at": "2026-10-18T17:36:07.214860Z",
+    "at": "2026-10-18T17:44:47.045748Z",
     "comment": ""
   },
   "review_history": [
     {
       "decision": "approved",
       "reviewer": "an",
-      "files_hash": "sha256:3012e054674b102e5f46197b3f720c86fa86aa5af6a0fdb928ed2d12239217a6",
+      "files_hash": "sha256:8c50858be875aab3343fa32a6888bb14ec223ec559445947eb7176b24cd8f088",
       "version": 1,
-      "at": "2026-10-18T17:36:07.214860Z",
+      "at": "2026-10-18T17:44:47.045748Z",
       "comment": ""
     }
   ],
   "timeline": [
     {
       "event": "submitted",
-      "at": "2026-10-18T17:32:46.530927Z",
+      "at": "2026-10-18T17:42:23.882471Z",
       "actor": "minh"
     },
     {
       "event": "plan_ready",
-      "at": "2026-10-18T17:32:51.686558Z",
+      "at": "2026-10-18T17:42:28.374496Z",
       "actor": null
     },
     {
       "event": "plan_confirmed",
-      "at": "2026-10-18T17:33:14.775449Z",
+      "at": "2026-10-18T17:42:49.932400Z",
       "actor": "minh"
     },
     {
       "event": "spec_ready",
-      "at": "2026-10-18T17:33:21.765351Z",
+      "at": "2026-10-18T17:42:56.721597Z",
       "actor": null
     },
     {
       "event": "mapping_submitted",
-      "at": "2026-10-18T17:34:16.084635Z",
+      "at": "2026-10-18T17:43:22.836491Z",
       "actor": "Minh"
     },
     {
       "event": "finished",
-      "at": "2026-10-18T17:34:28.378357Z",
+      "at": "2026-10-18T17:43:35.101070Z",
       "actor": null
     }
   ]
