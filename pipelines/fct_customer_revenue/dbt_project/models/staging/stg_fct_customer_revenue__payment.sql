@@ -44,6 +44,10 @@ checked as (
                 then 'cast:customer_id'
             when _raw_3 is not null and "amount" is null
                 then 'cast:amount'
+            when (customer_id IS NULL)
+                then 'reject_if:customer_id IS NULL'
+            when (amount < 0)
+                then 'reject_if:amount < 0'
         end as _reject_reason
 
     from typed

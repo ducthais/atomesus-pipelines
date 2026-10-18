@@ -14,9 +14,5 @@ inner join (SELECT payment.customer_id, SUM(payment.amount) AS __m1, COUNT(payme
     on payment.customer_id = customer.customer_id
 
 where true
-{% if is_incremental() %}
-    -- Chỉ tính lại từ phân vùng mới nhất đã có; unique_key gộp đè phần trùng.
-    and customer.customer_id >= (select max("customer_id") from {{ this }})
-{% endif %}
 
 group by 1
